@@ -673,10 +673,10 @@ end)
 -- 90 giây đổi server
 spawn(function()
     while true do
-        wait(90)
+        wait(60)
         -- SỬA LỖI: Kiểm tra biến Global
         if getgenv().autoCollectChest and serverHop then
-            serverHop("Đủ 90 giây, đổi server!")
+            serverHop("Đủ 60 giây, đổi server!")
         end
     end
 end)
@@ -684,9 +684,9 @@ end)
 -- Không nhặt được rương trong 10 giây → đổi server
 spawn(function()
     while true do
-        wait(10)
+        wait(5)
         -- SỬA LỖI: Kiểm tra biến Global
-        if getgenv().autoCollectChest and os.time() - lastChestTime > 10 and serverHop then
+        if getgenv().autoCollectChest and os.time() - lastChestTime > 5 and serverHop then
             serverHop("Không nhặt được rương, đổi server!")
         end
     end
