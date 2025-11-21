@@ -8,9 +8,9 @@ startupSound.Parent = game.CoreGui
 startupSound:Play()
 
 local Notification = require(game:GetService("ReplicatedStorage").Notification)
-Notification.new("<Color=Cyan>R2LX Hub <Color=/>"):Display()
+Notification.new("<Color=Cyan>HenTaiZ Hub <Color=/>"):Display()
 wait(0.5)
-Notification.new("<Color=Yellow>By R2LX Hub On Top👑<Color=/>"):Display()
+Notification.new("<Color=Yellow>By HenTaiZ Hub On Top👑<Color=/>"):Display()
 wait(1)
 function CreateNotification(text1, color1, text2, color2)
     local ScreenGui = Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
@@ -30,7 +30,7 @@ function CreateNotification(text1, color1, text2, color2)
 end
 
 -- Ví dụ chạy thử:
-CreateNotification("HACK", Color3.fromRGB(255, 0, 0), "R2LX HUB!", Color3.fromRGB(0, 255, 0))
+CreateNotification("HACK", Color3.fromRGB(255, 0, 0), "HenTaiZ HUB!", Color3.fromRGB(0, 255, 0))
 -- Thông Báo Executor
 
 -- Chức năng hiển thị FPS và Pinglocal Players = game:GetService("Players") local RunService = game:GetService("RunService") local Stats = game:GetService("Stats")
@@ -775,7 +775,7 @@ Corner.CornerRadius = UDim.new(0, 15)
 local Title = Instance.new("TextLabel", Frame)
 Title.Size = UDim2.new(1, 0, 0, 50)
 Title.BackgroundTransparency = 1
-Title.Text = "🎮 NaJa Hub Manager"
+Title.Text = "🎮 HenTaiZ Hub Beta"
 Title.TextScaled = true
 Title.Font = Enum.Font.GothamBold
 Title.TextColor3 = Color3.fromRGB(255,255,255)
