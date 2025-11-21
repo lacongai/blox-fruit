@@ -550,9 +550,6 @@ local function serverHop(reason)
     if not autoCollectChest then return end
 
     -- Hiển thị notification
-    createAura()
-    createBodyGlow()
-    playFakeTransformAnim()
     game.StarterGui:SetCore("SendNotification", {
         Title = "🔄 Server Hop",
         Text = reason,
@@ -758,74 +755,41 @@ end)
 
 -- 🎮 Tạo nút BẬT/TẮT
 -- ======= UI QUẢN LÝ GIAO DIỆN MỚI =======
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Parent = game.CoreGui
-ScreenGui.ResetOnSpawn = false
+-- 🎮 Tạo nút BẬT/TẮT
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+local ToggleButton = Instance.new("TextButton", ScreenGui)
+local UICorner = Instance.new("UICorner", ToggleButton)
 
--- Container chính
-local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 300, 0, 350)
-Frame.Position = UDim2.new(0, 50, 0, 50)
-Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-Frame.BorderSizePixel = 0
-local Corner = Instance.new("UICorner", Frame)
-Corner.CornerRadius = UDim.new(0, 15)
+ToggleButton.Size = UDim2.new(0, 120, 0, 50)
+ToggleButton.Position = UDim2.new(0, 50, 0, 200)
+ToggleButton.Text = "OFF Nhặt Rương"
+ToggleButton.BackgroundColor3 = Color3.fromRGB(29, 29, 29)
+ToggleButton.TextScaled = true
 
--- Tiêu đề
-local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1, 0, 0, 50)
-Title.BackgroundTransparency = 1
-Title.Text = "🎮 HenTaiZ Hub Beta"
-Title.TextScaled = true
-Title.Font = Enum.Font.GothamBold
-Title.TextColor3 = Color3.fromRGB(255,255,255)
+ToggleButton.MouseButton1Click:Connect(function()
+    autoCollectChest = not autoCollectChest
+    ToggleButton.Text = autoCollectChest and "OFF Nhặt Rương" or "ON Nhặt Rương"
 
--- Hàm tạo toggle button đẹp
-local function createToggle(name, default, callback, position)
-    local btn = Instance.new("TextButton", Frame)
-    btn.Size = UDim2.new(0, 220, 0, 50)
-    btn.Position = position
-    btn.Text = default and ("ON " .. name) or ("OFF " .. name)
-    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    btn.TextScaled = true
-    btn.Font = Enum.Font.Gotham
-    btn.TextColor3 = Color3.fromRGB(255,255,255)
+    if autoCollectChest then
+        spawn(collectChests)
+    end
 
-    local corner = Instance.new("UICorner", btn)
-    corner.CornerRadius = UDim.new(0, 12)
-
-    local state = default
-
-    -- Hover effect
-    btn.MouseEnter:Connect(function()
-        btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-    end)
-    btn.MouseLeave:Connect(function()
-        btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    end)
-
-    btn.MouseButton1Click:Connect(function()
-        state = not state
-        btn.Text = state and ("ON " .. name) or ("OFF " .. name)
-        callback(state)
-        -- Thông báo
-        game.StarterGui:SetCore("SendNotification", {
-            Title = "🛠️ " .. name,
-            Text = state and (name .. " Bật!") or (name .. " Tắt!"),
-            Duration = 3
-        })
-    end)
-
-    -- Hiệu ứng chữ cầu vồng
-    spawn(function()
-        local hue = 0
-        while true do
-            btn.TextColor3 = Color3.fromHSV(hue, 1, 1)
-            hue = (hue + 0.01) % 1
-            task.wait(0.05)
-        end
-    end)
-end
+    -- 📢 Thông báo bật/tắt
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "🛠️ Trạng Thái",
+        Text = autoCollectChest and "Đang nhặt rương!" or "Đã tắt nhặt rương!",
+        Duration = 3
+    })
+end)
+-- Hiệu ứng đổi màu cầu vồng cho viền chữ
+spawn(function()
+    local hue = 0
+    while true do
+        ToggleButton.TextColor3 = Color3.fromHSV(hue, 1, 1)
+        hue = (hue + 0.01) % 1
+        wait(0.05)
+    end
+end)
 
 -- 🔥 Chạy tự động khi script khởi động
 spawn(collectChests)
