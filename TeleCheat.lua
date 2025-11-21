@@ -344,7 +344,7 @@ Notification.new("<Color=Cyan>HenTaiZ Hub <Color=/>"):Display()
 wait(0.5)
 Notification.new("<Color=Yellow>By HenTaiZ Hub On Top👑<Color=/>"):Display()
 wait(1)
--- 📌 R2LX HUB - Nhặt Rương Chính Xác + Đổi Server Đúng Yêu Cầu
+-- 📌 HenTaiZ HUB - Nhặt Rương Chính Xác + Đổi Server Đúng Yêu Cầu
 
 repeat wait() until game:IsLoaded() and game.Players.LocalPlayer
 
@@ -374,9 +374,10 @@ wait(2)
 
 
 
-
--- ================== Aura & Fake V4 Effect ==================
+-- ================== Aura & Fake V4 + Race Transform ==================
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
 local player = Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
 local humanoid = char:WaitForChild("Humanoid")
@@ -384,33 +385,29 @@ local hrp = char:WaitForChild("HumanoidRootPart")
 
 -- ⚡ Tạo vòng sáng giả phía sau (giống awakening circle)
 local function createAura()
-    -- Kiểm tra nếu đã có thì không tạo lại
     if hrp:FindFirstChild("FakeV4Aura") then return end
 
     local aura = Instance.new("ParticleEmitter")
     aura.Name = "FakeV4Aura"
-    aura.Texture = "rbxassetid://259318296" -- texture ánh sáng
+    aura.Texture = "rbxassetid://259318296"
     aura.Rate = 50
     aura.Lifetime = NumberRange.new(1)
     aura.Speed = NumberRange.new(0)
     aura.Rotation = NumberRange.new(0, 360)
     aura.RotSpeed = NumberRange.new(30)
-    aura.Size = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 3),
-        NumberSequenceKeypoint.new(1, 0)
-    })
-    aura.Color = ColorSequence.new(Color3.fromRGB(255, 85, 0)) -- đỏ cam sáng
+    aura.Size = NumberSequence.new({NumberSequenceKeypoint.new(0,3), NumberSequenceKeypoint.new(1,0)})
+    aura.Color = ColorSequence.new(Color3.fromRGB(255,85,0))
     aura.LightEmission = 1
     aura.Parent = hrp
 end
 
--- 🔥 Hiệu ứng glow toàn thân
+-- 🔥 Glow toàn thân
 local function createBodyGlow()
     for _, part in ipairs(char:GetChildren()) do
         if part:IsA("BasePart") and not part:FindFirstChild("FakeV4Glow") then
             local glow = Instance.new("PointLight")
             glow.Name = "FakeV4Glow"
-            glow.Color = Color3.fromRGB(255, 85, 0)
+            glow.Color = Color3.fromRGB(255,85,0)
             glow.Range = 10
             glow.Brightness = 2
             glow.Parent = part
@@ -418,18 +415,41 @@ local function createBodyGlow()
     end
 end
 
--- 🎬 Fake Animation khi bật V4
+-- 🎬 Fake Pose Animation
 local function playFakeTransformAnim()
     local anim = Instance.new("Animation")
-    anim.AnimationId = "rbxassetid://507771019" -- Animation mẫu (pose)
+    anim.AnimationId = "rbxassetid://507771019"
     local track = humanoid:LoadAnimation(anim)
     track:Play()
 end
 
--- ================== Chạy ngay khi script load ==================
+-- 🌟 Race Transform Animation + Effect
+local function playRaceTransform()
+    local args = {
+        Character = char,
+        CFrame = hrp.CFrame,
+        Color1 = Color3.fromRGB(255,85,0),
+        Color2 = Color3.fromRGB(255,85,0),
+        Color3 = Color3.fromRGB(255,85,0),
+    }
+
+    -- Load animation từ ReplicatedStorage
+    local raceAnim = ReplicatedStorage.Util.Anims.Storage["2"].RaceTransform
+    humanoid:LoadAnimation(raceAnim):Play()
+
+    -- Delay 1 giây rồi gọi effect
+    delay(1, function()
+        pcall(function()
+            require(ReplicatedStorage.Effect.Container.RaceTransformation.Main)(args)
+        end)
+    end)
+end
+
+-- ================== Chạy ngay khi load script ==================
 createAura()
 createBodyGlow()
 playFakeTransformAnim()
+playRaceTransform()
 
 
 -- ✅ Biến kiểm soát
@@ -443,7 +463,7 @@ local startTime = os.time()
 
 -- 📢 Thông báo khi script khởi động
 game.StarterGui:SetCore("SendNotification", {
-    Title = "R2LX HUB",
+    Title = "HenTaiZ HUB",
     Text = "Script đang chạy... Tự động nhặt rương!",
     Duration = 5
 })
@@ -472,6 +492,9 @@ local function serverHop(reason)
     if not autoCollectChest then return end
 
     -- Hiển thị notification
+    createAura()
+    createBodyGlow()
+    playFakeTransformAnim()
     game.StarterGui:SetCore("SendNotification", {
         Title = "🔄 Server Hop",
         Text = reason,
@@ -677,41 +700,74 @@ end)
 
 -- 🎮 Tạo nút BẬT/TẮT
 -- ======= UI QUẢN LÝ GIAO DIỆN MỚI =======
--- 🎮 Tạo nút BẬT/TẮT
-local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
-local ToggleButton = Instance.new("TextButton", ScreenGui)
-local UICorner = Instance.new("UICorner", ToggleButton)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ResetOnSpawn = false
 
-ToggleButton.Size = UDim2.new(0, 120, 0, 50)
-ToggleButton.Position = UDim2.new(0, 50, 0, 200)
-ToggleButton.Text = "OFF Nhặt Rương"
-ToggleButton.BackgroundColor3 = Color3.fromRGB(29, 29, 29)
-ToggleButton.TextScaled = true
+-- Container chính
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 300, 0, 350)
+Frame.Position = UDim2.new(0, 50, 0, 50)
+Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Frame.BorderSizePixel = 0
+local Corner = Instance.new("UICorner", Frame)
+Corner.CornerRadius = UDim.new(0, 15)
 
-ToggleButton.MouseButton1Click:Connect(function()
-    autoCollectChest = not autoCollectChest
-    ToggleButton.Text = autoCollectChest and "OFF Nhặt Rương" or "ON Nhặt Rương"
+-- Tiêu đề
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1, 0, 0, 50)
+Title.BackgroundTransparency = 1
+Title.Text = "🎮 NaJa Hub Manager"
+Title.TextScaled = true
+Title.Font = Enum.Font.GothamBold
+Title.TextColor3 = Color3.fromRGB(255,255,255)
 
-    if autoCollectChest then
-        spawn(collectChests)
-    end
+-- Hàm tạo toggle button đẹp
+local function createToggle(name, default, callback, position)
+    local btn = Instance.new("TextButton", Frame)
+    btn.Size = UDim2.new(0, 220, 0, 50)
+    btn.Position = position
+    btn.Text = default and ("ON " .. name) or ("OFF " .. name)
+    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    btn.TextScaled = true
+    btn.Font = Enum.Font.Gotham
+    btn.TextColor3 = Color3.fromRGB(255,255,255)
 
-    -- 📢 Thông báo bật/tắt
-    game.StarterGui:SetCore("SendNotification", {
-        Title = "🛠️ Trạng Thái",
-        Text = autoCollectChest and "Đang nhặt rương!" or "Đã tắt nhặt rương!",
-        Duration = 3
-    })
-end)
--- Hiệu ứng đổi màu cầu vồng cho viền chữ
-spawn(function()
-    local hue = 0
-    while true do
-        ToggleButton.TextColor3 = Color3.fromHSV(hue, 1, 1)
-        hue = (hue + 0.01) % 1
-        wait(0.05)
-    end
-end)
+    local corner = Instance.new("UICorner", btn)
+    corner.CornerRadius = UDim.new(0, 12)
+
+    local state = default
+
+    -- Hover effect
+    btn.MouseEnter:Connect(function()
+        btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    end)
+    btn.MouseLeave:Connect(function()
+        btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    end)
+
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        btn.Text = state and ("ON " .. name) or ("OFF " .. name)
+        callback(state)
+        -- Thông báo
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "🛠️ " .. name,
+            Text = state and (name .. " Bật!") or (name .. " Tắt!"),
+            Duration = 3
+        })
+    end)
+
+    -- Hiệu ứng chữ cầu vồng
+    spawn(function()
+        local hue = 0
+        while true do
+            btn.TextColor3 = Color3.fromHSV(hue, 1, 1)
+            hue = (hue + 0.01) % 1
+            task.wait(0.05)
+        end
+    end)
+end
 
 -- 🔥 Chạy tự động khi script khởi động
 spawn(collectChests)
