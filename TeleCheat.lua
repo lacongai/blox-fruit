@@ -340,9 +340,9 @@ game.StarterGui:SetCore("SendNotification", {
 
 -- 📢 Thông báo
 local Notification = require(game:GetService("ReplicatedStorage").Notification)
-Notification.new("<Color=Cyan>R2LX Hub <Color=/>"):Display()
+Notification.new("<Color=Cyan>HenTaiZ Hub <Color=/>"):Display()
 wait(0.5)
-Notification.new("<Color=Yellow>By R2LX Hub On Top👑<Color=/>"):Display()
+Notification.new("<Color=Yellow>By HenTaiZ Hub On Top👑<Color=/>"):Display()
 wait(1)
 -- 📌 R2LX HUB - Nhặt Rương Chính Xác + Đổi Server Đúng Yêu Cầu
 
@@ -372,13 +372,6 @@ end
 AutoSelectTeam()
 wait(2)
 
--- Bật/tắt từ bên ngoài script:
--- getgenv().Fixlag = "true"  -- hoặc "false"
-
-if getgenv().Fixlag ~= "true" then
-    warn("⚠️ FixLag đang tắt, script sẽ không chạy")
-    return
-end
 
 -- 🔧 Roblox Lag Fix / Performance Boost Script
 local Players = game:GetService("Players")
