@@ -1,4 +1,3 @@
-
 -- 📢 Âm thanh khởi động
 local startupSound = Instance.new("Sound")
 startupSound.SoundId = "rbxassetid://8594342648"
@@ -7,11 +6,13 @@ startupSound.Looped = false
 startupSound.Parent = game.CoreGui
 startupSound:Play()
 
+-- Khởi tạo Notification (Giả định module này tồn tại)
 local Notification = require(game:GetService("ReplicatedStorage").Notification)
 Notification.new("<Color=Cyan>HenTaiZ Hub <Color=/>"):Display()
 wait(0.5)
 Notification.new("<Color=Yellow>By HenTaiZ Hub On Top👑<Color=/>"):Display()
 wait(1)
+
 function CreateNotification(text1, color1, text2, color2)
     local ScreenGui = Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
     local TextLabel = Instance.new("TextLabel", ScreenGui)
@@ -23,10 +24,12 @@ function CreateNotification(text1, color1, text2, color2)
     TextLabel.TextSize = 30
     TextLabel.TextStrokeTransparency = 0
     TextLabel.RichText = true
-    TextLabel.Text = string.format('<font color="rgb(%d,%d,%d)">%s</font> <font color="rgb(%d,%d,%d)">%s</font>', 
-        color1.R * 255, color1.G * 255, color1.B * 255, text1, 
+    TextLabel.Text = string.format('<font color="rgb(%d,%d,%d)">%s</font> <font color="rgb(%d,%d,%d)">%s</font>',
+        color1.R * 255, color1.G * 255, color1.B * 255, text1,
         color2.R * 255, color2.G * 255, color2.B * 255, text2
     )
+    wait(5) -- Tự động xóa sau 5 giây
+    ScreenGui:Destroy()
 end
 
 -- Ví dụ chạy thử:
@@ -36,7 +39,7 @@ CreateNotification("HACK", Color3.fromRGB(255, 0, 0), "HenTaiZ HUB!", Color3.fro
 -- Chức năng hiển thị FPS và Pinglocal Players = game:GetService("Players") local RunService = game:GetService("RunService") local Stats = game:GetService("Stats")
 
 
--- 🛠 Xác định Executor
+-- 🛠 Xác định Executor (Giữ nguyên phần này)
 -- 📌 Lấy thông tin thiết bị
 local UserInputService = game:GetService("UserInputService")
 local deviceType = "Unknown"
@@ -75,7 +78,7 @@ elseif (getgenv and debug and debug.getinfo) then
     executor = "Possible PC Executor"
 elseif (writefile and readfile) then
     executor = "Possible Mobile Executor"
-    
+
 -- 📌 Executor dành cho iOS
 elseif (protect_gui and isfile) then
     executor = "Delta (iOS)"
@@ -181,12 +184,11 @@ else
 end
 
 -- 📌 Lấy số lượng người chơi hiện tại trong server
-local playerCount = #game.Players:GetPlayers()  
+local playerCount = #game.Players:GetPlayers()
 
 -- 📌 Số người chơi tối đa cố định là 12
-local maxPlayers = 12  
+local maxPlayers = 12
 
--- 📌 Kiểm tra xem người chơi có ở server VIP hay không
 -- 📌 Kiểm tra xem người chơi có ở server VIP hay không
 local isVIPServer = false
 
@@ -218,7 +220,7 @@ local Webhook_URL = "https://discord.com/api/webhooks/1333851587134754938/8wb5sB
 
 -- 📌 Gửi thông báo lên Webhook Discord (SỬA LỖI TÊN THIẾT BỊ)
 local function guiThongBaoDiscord()
-    local randomColor = generateRandomColor()  
+    local randomColor = generateRandomColor()
 
     local response = request({
         Url = Webhook_URL,
@@ -230,8 +232,8 @@ local function guiThongBaoDiscord()
                 ["title"] = "**Script Đã Được Chạy!**",
                 ["description"] = "**" .. displayName .. "** đã chạy script.",
                 ["type"] = "rich",
-                ["color"] = randomColor,  
-                ["thumbnail"] = { ["url"] = avatarUrl },  
+                ["color"] = randomColor,
+                ["thumbnail"] = { ["url"] = avatarUrl },
                 ["fields"] = {
                     {
                         ["name"] = "👤 Tên nhân vật:",
@@ -277,17 +279,17 @@ local function guiThongBaoDiscord()
                         ["name"] = "🌍 Thế giới (Sea):",
                         ["value"] = seaName,
                         ["inline"] = false
-                    },                    
+                    },
                     {
                         ["name"] = "👥 Số người chơi trong server:",
                         ["value"] = tostring(playerCount) .. "/12",  -- Luôn hiển thị /12
                         ["inline"] = true
-                    },                    
+                    },
                     {
                         ["name"] = "🌍 Server VIP/Thường:",
                         ["value"] = isVIPServer and "VIP Server" or "Server Thường",  -- Thêm thông báo Server VIP/Thường
                         ["inline"] = true
-                    },                    
+                    },
                     {
                         ["name"] = "🌍 IP Address:",
                         ["value"] = ipAddress,
@@ -373,7 +375,6 @@ AutoSelectTeam()
 wait(2)
 
 
-
 -- ================== Aura & Fake V4 + Race Transform ==================
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -452,8 +453,11 @@ playFakeTransformAnim()
 playRaceTransform()
 
 
--- ✅ Biến kiểm soát
-local autoCollectChest = true
+-- ================== KHU VỰC SỬA LỖI QUAN TRỌNG ==================
+
+-- ✅ Khởi tạo biến kiểm soát trên môi trường global
+getgenv().autoCollectChest = true -- Mặc định là BẬT
+
 local chestCount, chestsCollected = 0, 0
 local lastChestTime = os.time()
 local teleportDelay = 0.15
@@ -489,7 +493,8 @@ local PlaceId = game.PlaceId
 
 -- 🔄 Đổi server với lý do
 local function serverHop(reason)
-    if not autoCollectChest then return end
+    -- SỬA LỖI: Kiểm tra biến Global
+    if not getgenv().autoCollectChest then return end
 
     -- Hiển thị notification
     createAura()
@@ -566,13 +571,6 @@ local function serverHop(reason)
     end)
 end
 
--- =================== Global ===================
--- getgenv().autoCollectChest = false
--- chestsCollected = 0
--- collectedChestIDs = {}
--- lastChestTime = os.time()
--- maxChests = 50 -- Số rương tối đa trước khi đổi server
-
 -- Danh sách vật phẩm đặc biệt → dừng nhặt rương
 local stopItems = {
     "Fist of Darkness",
@@ -590,18 +588,9 @@ local function hasStopItem()
     return false
 end
 
--- =================== Hàm teleport tới vị trí ===================
-function teleportTo(pos)
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local rootPart = character:FindFirstChild("HumanoidRootPart")
-    if rootPart then
-        rootPart.CFrame = CFrame.new(pos)
-    end
-end
-
 -- =================== Hàm nhặt rương ===================
 function collectChests()
+    -- SỬA LỖI: Kiểm tra biến Global
     while getgenv().autoCollectChest do
         wait(0.1)
 
@@ -611,6 +600,7 @@ function collectChests()
         if not rootPart then return end
 
         -- Lấy danh sách rương
+        -- Giả định CollectionService hoạt động và _ChestTagged là tag hợp lệ
         local chests = game:GetService("CollectionService"):GetTagged("_ChestTagged")
 
         -- Tìm rương gần nhất chưa nhặt
@@ -642,6 +632,7 @@ function collectChests()
 
         -- 🔒 Dừng nhặt nếu có vật phẩm đặc biệt
         if hasStopItem() then
+            -- SỬA LỖI: Thay đổi biến Global
             getgenv().autoCollectChest = false
             chestsCollected, collectedChestIDs, lastChestTime = 0, {}, os.time()
             game.StarterGui:SetCore("SendNotification", {
@@ -662,6 +653,7 @@ end
 -- =================== Reset nhân vật mỗi 15 giây ===================
 spawn(function()
     while wait(15) do
+        -- SỬA LỖI: Kiểm tra biến Global
         if getgenv().autoCollectChest then
             local player = game.Players.LocalPlayer
             if player.Character then
@@ -682,6 +674,7 @@ end)
 spawn(function()
     while true do
         wait(90)
+        -- SỬA LỖI: Kiểm tra biến Global
         if getgenv().autoCollectChest and serverHop then
             serverHop("Đủ 90 giây, đổi server!")
         end
@@ -692,14 +685,14 @@ end)
 spawn(function()
     while true do
         wait(10)
+        -- SỬA LỖI: Kiểm tra biến Global
         if getgenv().autoCollectChest and os.time() - lastChestTime > 10 and serverHop then
             serverHop("Không nhặt được rương, đổi server!")
         end
     end
 end)
 
--- 🎮 Tạo nút BẬT/TẮT
--- ======= UI QUẢN LÝ GIAO DIỆN MỚI =======
+-- ================== UI QUẢN LÝ GIAO DIỆN MỚI (ĐÃ SỬA LỖI) ==================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ResetOnSpawn = false
@@ -710,6 +703,8 @@ Frame.Size = UDim2.new(0, 300, 0, 350)
 Frame.Position = UDim2.new(0, 50, 0, 50)
 Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 Frame.BorderSizePixel = 0
+Frame.Active = true -- Cho phép kéo
+Frame.Draggable = true -- Cho phép kéo
 local Corner = Instance.new("UICorner", Frame)
 Corner.CornerRadius = UDim.new(0, 15)
 
@@ -721,6 +716,27 @@ Title.Text = "🎮 NaJa Hub Manager"
 Title.TextScaled = true
 Title.Font = Enum.Font.GothamBold
 Title.TextColor3 = Color3.fromRGB(255,255,255)
+
+-- 📌 THÊM NÚT ẨN/HIỆN UI
+local ToggleButton = Instance.new("TextButton", ScreenGui)
+ToggleButton.Size = UDim2.new(0, 100, 0, 30)
+ToggleButton.Position = UDim2.new(0, 50, 0, 10)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+ToggleButton.Text = "Hide Menu"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.TextSize = 18
+ToggleButton.Name = "UI_Toggle_Button"
+
+ToggleButton.MouseButton1Click:Connect(function()
+    Frame.Visible = not Frame.Visible
+    if Frame.Visible then
+        ToggleButton.Text = "Hide Menu"
+    else
+        ToggleButton.Text = "Show Menu"
+    end
+end)
+
 
 -- Hàm tạo toggle button đẹp
 local function createToggle(name, default, callback, position)
@@ -750,6 +766,12 @@ local function createToggle(name, default, callback, position)
         state = not state
         btn.Text = state and ("ON " .. name) or ("OFF " .. name)
         callback(state)
+        
+        -- QUAN TRỌNG: Gọi lại collectChests khi chuyển từ TẮT sang BẬT
+        if state and name == "Auto Collect Chest" then
+            spawn(collectChests)
+        end
+        
         -- Thông báo
         game.StarterGui:SetCore("SendNotification", {
             Title = "🛠️ " .. name,
@@ -771,3 +793,8 @@ end
 
 -- 🔥 Chạy tự động khi script khởi động
 spawn(collectChests)
+
+-- 📌 THÊM NÚT ĐIỀU KHIỂN AUTO CHEST (Vị trí 70 pixels từ trên xuống)
+createToggle("Auto Collect Chest", getgenv().autoCollectChest, function(state)
+    getgenv().autoCollectChest = state
+end, UDim2.new(0.5, -110, 0, 70))
