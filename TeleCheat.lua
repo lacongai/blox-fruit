@@ -185,98 +185,29 @@ local function teleportTo(targetPosition)
     end
 end
 
+
 -- 🔄 Đổi server
-local HttpService = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local PlaceId = game.PlaceId
-
--- 🔄 Đổi server với lý do
 local function serverHop(reason)
-    -- ✅ KIỂM TRA VÀ NGĂN CHẶN: Nếu đã tắt hoặc đang trong quá trình hop thì thoát
-    if not getgenv().autoCollectChest or getgenv().isServerHopping then return end
-    
-    -- 🚨 KÍCH HOẠT TRẠNG THÁI HOP:
-    getgenv().isServerHopping = true 
-    getgenv().autoCollectChest = false -- Tắt auto collect để dừng vòng lặp collectChests
+    if not autoCollectChest then return end
 
-    -- Hiển thị notification
-    createAura()
-    createBodyGlow()
-    playFakeTransformAnim()
     game.StarterGui:SetCore("SendNotification", {
         Title = "🔄 Server Hop",
         Text = reason,
         Duration = 5
     })
 
-    -- Hàm lấy danh sách server
-    local function ListServers(cursor)
-        local url = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
-        if cursor then
-            url = url .. "&cursor=" .. cursor
-        end
-
-        local success, response = pcall(function()
-            return game:HttpGet(url)
-        end)
-
-        if success then
-            task.wait(1) -- tránh spam API
-            return HttpService:JSONDecode(response)
-        else
-            warn("⚠️ Lỗi lấy server:", response)
-            return {data = {}, nextPageCursor = nil}
+    local HttpService = game:GetService("HttpService")
+    local TPS = game:GetService("TeleportService")
+    local Servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100")).data
+    
+    for _, v in pairs(Servers) do
+        if v.playing < v.maxPlayers and v.id ~= game.JobId then
+            TPS:TeleportToPlaceInstance(game.PlaceId, v.id)
+            break
         end
     end
-
-    -- Tìm server ít người nhất, ưu tiên server 1 người
-    local function FindBestServer()
-        local cursor = nil
-        local best = nil
-
-        repeat
-            local data = ListServers(cursor)
-            for _, server in ipairs(data.data) do
-                if server.playing < server.maxPlayers and server.id ~= game.JobId then
-                    if server.playing == 1 then
-                        return server -- ưu tiên server 1 người
-                    end
-                    if not best or server.playing < best.playing then
-                        best = server
-                    end
-                end
-            end
-            cursor = data.nextPageCursor
-        until not cursor or best
-
-        return best
-    end
-
-    -- Thử teleport với retry
-    task.spawn(function()
-        while true do
-            local target = FindBestServer()
-            if target then
-                print("👉 Teleport tới server:", target.id, "Players:", target.playing)
-                local ok, err = pcall(function()
-                    TeleportService:TeleportToPlaceInstance(PlaceId, target.id, LocalPlayer)
-                end)
-                if ok then
-                    break
-                else
-                    warn("⚠️ Teleport thất bại:", err, "→ thử lại sau 5s")
-                end
-            else
-                warn("❌ Không tìm được server phù hợp → thử lại sau 5s")
-            end
-            task.wait(5)
-        end
-        -- Dù thành công hay thất bại, client sẽ rời khỏi server này
-        -- nên không cần đặt isServerHopping = false ở đây.
-    end)
 end
+
 
 -- Danh sách vật phẩm đặc biệt → dừng nhặt rương
 local stopItems = {
