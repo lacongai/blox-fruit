@@ -39,6 +39,476 @@ CreateNotification("HACK", Color3.fromRGB(255, 0, 0), "HenTaiZ HUB!", Color3.fro
 -- Chức năng hiển thị FPS và Pinglocal Players = game:GetService("Players") local RunService = game:GetService("RunService") local Stats = game:GetService("Stats")
 
 
+
+-- 📢 Thông báo
+local Notification = require(game:GetService("ReplicatedStorage").Notification)
+Notification.new("<Color=Cyan>HenTaiZ Hub <Color=/>"):Display()
+wait(0.5)
+Notification.new("<Color=Yellow>By HenTaiZ Hub On Top👑<Color=/>"):Display()
+wait(1)
+-- 📌 HenTaiZ HUB - Nhặt Rương Chính Xác + Đổi Server Đúng Yêu Cầu
+
+repeat wait() until game:IsLoaded() and game.Players.LocalPlayer
+
+-- 🖇️ Liên kết Discord
+setclipboard("https://discord.gg/heSHddPs")
+
+-- 🏴‍☠️ Tự động chọn team
+local function AutoSelectTeam()
+    if not getgenv().Team then
+        warn("Chưa chọn team!")
+        return
+    end
+
+    local teamName = getgenv().Team
+    local validTeams = {"Marines", "Pirates"}
+
+    if table.find(validTeams, teamName) then
+        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetTeam", teamName)
+        warn("✅ Đã chọn team: " .. teamName)
+    else
+        warn("⚠️ Team không hợp lệ: " .. teamName)
+    end
+end
+
+AutoSelectTeam()
+wait(2)
+
+
+-- ================== Aura & Fake V4 + Race Transform ==================
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local humanoid = char:WaitForChild("Humanoid")
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+-- ⚡ Tạo vòng sáng giả phía sau (giống awakening circle)
+local function createAura()
+    if hrp:FindFirstChild("FakeV4Aura") then return end
+
+    local aura = Instance.new("ParticleEmitter")
+    aura.Name = "FakeV4Aura"
+    aura.Texture = "rbxassetid://259318296"
+    aura.Rate = 50
+    aura.Lifetime = NumberRange.new(1)
+    aura.Speed = NumberRange.new(0)
+    aura.Rotation = NumberRange.new(0, 360)
+    aura.RotSpeed = NumberRange.new(30)
+    aura.Size = NumberSequence.new({NumberSequenceKeypoint.new(0,3), NumberSequenceKeypoint.new(1,0)})
+    aura.Color = ColorSequence.new(Color3.fromRGB(255,85,0))
+    aura.LightEmission = 1
+    aura.Parent = hrp
+end
+
+-- 🔥 Glow toàn thân
+local function createBodyGlow()
+    for _, part in ipairs(char:GetChildren()) do
+        if part:IsA("BasePart") and not part:FindFirstChild("FakeV4Glow") then
+            local glow = Instance.new("PointLight")
+            glow.Name = "FakeV4Glow"
+            glow.Color = Color3.fromRGB(255,85,0)
+            glow.Range = 10
+            glow.Brightness = 2
+            glow.Parent = part
+        end
+    end
+end
+
+-- 🎬 Fake Pose Animation
+local function playFakeTransformAnim()
+    local anim = Instance.new("Animation")
+    anim.AnimationId = "rbxassetid://507771019"
+    local track = humanoid:LoadAnimation(anim)
+    track:Play()
+end
+
+-- 🌟 Race Transform Animation + Effect
+local function playRaceTransform()
+    local args = {
+        Character = char,
+        CFrame = hrp.CFrame,
+        Color1 = Color3.fromRGB(255,85,0),
+        Color2 = Color3.fromRGB(255,85,0),
+        Color3 = Color3.fromRGB(255,85,0),
+    }
+
+    -- Load animation từ ReplicatedStorage
+    local raceAnim = ReplicatedStorage.Util.Anims.Storage["2"].RaceTransform
+    humanoid:LoadAnimation(raceAnim):Play()
+
+    -- Delay 1 giây rồi gọi effect
+    delay(1, function()
+        pcall(function()
+            require(ReplicatedStorage.Effect.Container.RaceTransformation.Main)(args)
+        end)
+    end)
+end
+
+-- ================== Chạy ngay khi load script ==================
+createAura()
+createBodyGlow()
+playFakeTransformAnim()
+playRaceTransform()
+
+
+-- ================== KHU VỰC SỬA LỖI QUAN TRỌNG ==================
+
+-- ✅ Khởi tạo biến kiểm soát trên môi trường global
+getgenv().autoCollectChest = true -- Mặc định là BẬT
+getgenv().isServerHopping = false -- <<< BIẾN MỚI: Trạng thái đang đổi server
+
+local chestCount, chestsCollected = 0, 0
+local lastChestTime = os.time()
+local teleportDelay = 0.15
+local collectedChestIDs = {}
+local maxChests = math.random(50, 75)
+local startTime = os.time()
+
+-- 📢 Thông báo khi script khởi động
+game.StarterGui:SetCore("SendNotification", {
+    Title = "HenTaiZ HUB",
+    Text = "Script đang chạy... Tự động nhặt rương!",
+    Duration = 5
+})
+
+-- 🚀 Teleport an toàn
+local function teleportTo(targetPosition)
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+
+    if rootPart then
+        rootPart.CFrame = CFrame.new(targetPosition)
+        wait(teleportDelay)
+    end
+end
+
+-- 🔄 Đổi server
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlaceId = game.PlaceId
+
+-- 🔄 Đổi server với lý do
+local function serverHop(reason)
+    -- ✅ KIỂM TRA VÀ NGĂN CHẶN: Nếu đã tắt hoặc đang trong quá trình hop thì thoát
+    if not getgenv().autoCollectChest or getgenv().isServerHopping then return end
+    
+    -- 🚨 KÍCH HOẠT TRẠNG THÁI HOP:
+    getgenv().isServerHopping = true 
+    getgenv().autoCollectChest = false -- Tắt auto collect để dừng vòng lặp collectChests
+
+    -- Hiển thị notification
+    createAura()
+    createBodyGlow()
+    playFakeTransformAnim()
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "🔄 Server Hop",
+        Text = reason,
+        Duration = 5
+    })
+
+    -- Hàm lấy danh sách server
+    local function ListServers(cursor)
+        local url = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+        if cursor then
+            url = url .. "&cursor=" .. cursor
+        end
+
+        local success, response = pcall(function()
+            return game:HttpGet(url)
+        end)
+
+        if success then
+            task.wait(1) -- tránh spam API
+            return HttpService:JSONDecode(response)
+        else
+            warn("⚠️ Lỗi lấy server:", response)
+            return {data = {}, nextPageCursor = nil}
+        end
+    end
+
+    -- Tìm server ít người nhất, ưu tiên server 1 người
+    local function FindBestServer()
+        local cursor = nil
+        local best = nil
+
+        repeat
+            local data = ListServers(cursor)
+            for _, server in ipairs(data.data) do
+                if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                    if server.playing == 1 then
+                        return server -- ưu tiên server 1 người
+                    end
+                    if not best or server.playing < best.playing then
+                        best = server
+                    end
+                end
+            end
+            cursor = data.nextPageCursor
+        until not cursor or best
+
+        return best
+    end
+
+    -- Thử teleport với retry
+    task.spawn(function()
+        while true do
+            local target = FindBestServer()
+            if target then
+                print("👉 Teleport tới server:", target.id, "Players:", target.playing)
+                local ok, err = pcall(function()
+                    TeleportService:TeleportToPlaceInstance(PlaceId, target.id, LocalPlayer)
+                end)
+                if ok then
+                    break
+                else
+                    warn("⚠️ Teleport thất bại:", err, "→ thử lại sau 5s")
+                end
+            else
+                warn("❌ Không tìm được server phù hợp → thử lại sau 5s")
+            end
+            task.wait(5)
+        end
+        -- Dù thành công hay thất bại, client sẽ rời khỏi server này
+        -- nên không cần đặt isServerHopping = false ở đây.
+    end)
+end
+
+-- Danh sách vật phẩm đặc biệt → dừng nhặt rương
+local stopItems = {
+    "Fist of Darkness",
+    "God's Chalice"
+}
+
+-- =================== Hàm kiểm tra vật phẩm ===================
+local function hasStopItem()
+    local player = game.Players.LocalPlayer
+    for _, itemName in ipairs(stopItems) do
+        if player.Backpack:FindFirstChild(itemName) or player.Character:FindFirstChild(itemName) then
+            return true
+        end
+    end
+    return false
+end
+
+-- =================== Hàm nhặt rương ===================
+function collectChests()
+    -- SỬA LỖI: Kiểm tra biến Global
+    while getgenv().autoCollectChest do
+        wait(0.1)
+
+        local player = game.Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        if not rootPart then return end
+
+        -- Lấy danh sách rương
+        -- Giả định CollectionService hoạt động và _ChestTagged là tag hợp lệ
+        local chests = game:GetService("CollectionService"):GetTagged("_ChestTagged")
+
+        -- Tìm rương gần nhất chưa nhặt
+        local closestChest, closestDist = nil, math.huge
+        for _, chest in ipairs(chests) do
+            if not chest:GetAttribute("IsDisabled") and not collectedChestIDs[chest] then
+                local chestPos = chest:GetPivot().Position
+                local dist = (chestPos - rootPart.Position).Magnitude
+                if dist < closestDist then
+                    closestChest, closestDist = chest, dist
+                end
+            end
+        end
+
+        -- Nhặt rương nếu tìm thấy
+        if closestChest then
+            teleportTo(closestChest:GetPivot().Position + Vector3.new(0, 3, 0))
+            lastChestTime = os.time()
+            chestsCollected = chestsCollected + 1
+            collectedChestIDs[closestChest] = true
+
+            -- 📢 Thông báo nhặt rương
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "📦 Nhặt Rương",
+                Text = "Đã nhặt được " .. chestsCollected .. " rương!",
+                Duration = 3
+            })
+        end
+
+        -- 🔒 Dừng nhặt nếu có vật phẩm đặc biệt
+        if hasStopItem() then
+            -- SỬA LỖI: Thay đổi biến Global
+            getgenv().autoCollectChest = false
+            chestsCollected, collectedChestIDs, lastChestTime = 0, {}, os.time()
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "🚨 Auto Nhặt Dừng",
+                Text = "Đã nhặt được vật phẩm đặc biệt!",
+                Duration = 4
+            })
+            break
+        end
+
+        -- 🔄 Server hop khi đạt giới hạn rương
+        if chestsCollected >= maxChests and serverHop then
+            serverHop("Đã đạt giới hạn rương, đổi server!")
+        end
+    end
+end
+
+-- =================== Reset nhân vật mỗi 15 giây ===================
+spawn(function()
+    while wait(15) do
+        -- SỬA LỖI: Chỉ reset khi autoCollectChest BẬT VÀ KHÔNG ĐANG ĐỔI SERVER
+        if getgenv().autoCollectChest and not getgenv().isServerHopping then
+            local player = game.Players.LocalPlayer
+            if player.Character then
+                player.Character:BreakJoints()
+                chestsCollected, collectedChestIDs, lastChestTime = 0, {}, os.time()
+                game.StarterGui:SetCore("SendNotification", {
+                    Title = "🔄 Reset Nhân Vật",
+                    Text = "Để chống văng game!",
+                    Duration = 3
+                })
+            end
+        end
+    end
+end)
+
+-- =================== Server hop tự động ===================
+-- 90 giây đổi server
+spawn(function()
+    while true do
+        wait(60)
+        -- SỬA LỖI: Kiểm tra biến Global VÀ KHÔNG ĐANG ĐỔI SERVER
+        if getgenv().autoCollectChest and not getgenv().isServerHopping and serverHop then
+            serverHop("Đủ 60 giây, đổi server!")
+        end
+    end
+end)
+
+-- Không nhặt được rương trong 5 giây → đổi server
+spawn(function()
+    while true do
+        wait(5)
+        -- SỬA LỖI: Kiểm tra biến Global VÀ KHÔNG ĐANG ĐỔI SERVER
+        if getgenv().autoCollectChest and not getgenv().isServerHopping and os.time() - lastChestTime > 10 and serverHop then
+            serverHop("Không nhặt được rương, đổi server!")
+        end
+    end
+end)
+
+-- ================== UI QUẢN LÝ GIAO DIỆN MỚI (ĐÃ SỬA LỖI) ==================
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ResetOnSpawn = false
+
+-- Container chính
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 300, 0, 350)
+Frame.Position = UDim2.new(0, 50, 0, 50)
+Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Frame.BorderSizePixel = 0
+Frame.Active = true -- Cho phép kéo
+Frame.Draggable = true -- Cho phép kéo
+local Corner = Instance.new("UICorner", Frame)
+Corner.CornerRadius = UDim.new(0, 15)
+
+-- Tiêu đề
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1, 0, 0, 50)
+Title.BackgroundTransparency = 1
+Title.Text = "🎮 HenTaiZ Hub Beta"
+Title.TextScaled = true
+Title.Font = Enum.Font.GothamBold
+Title.TextColor3 = Color3.fromRGB(255,255,255)
+
+-- 📌 THÊM NÚT ẨN/HIỆN UI
+local ToggleButton = Instance.new("TextButton", ScreenGui)
+ToggleButton.Size = UDim2.new(0, 100, 0, 30)
+ToggleButton.Position = UDim2.new(0, 50, 0, 10)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+ToggleButton.Text = "Hide Menu"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.TextSize = 18
+ToggleButton.Name = "UI_Toggle_Button"
+
+ToggleButton.MouseButton1Click:Connect(function()
+    Frame.Visible = not Frame.Visible
+    if Frame.Visible then
+        ToggleButton.Text = "Hide Menu"
+    else
+        ToggleButton.Text = "Show Menu"
+    end
+end)
+
+
+-- Hàm tạo toggle button đẹp
+local function createToggle(name, default, callback, position)
+    local btn = Instance.new("TextButton", Frame)
+    btn.Size = UDim2.new(0, 220, 0, 50)
+    btn.Position = position
+    btn.Text = default and ("ON " .. name) or ("OFF " .. name)
+    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    btn.TextScaled = true
+    btn.Font = Enum.Font.Gotham
+    btn.TextColor3 = Color3.fromRGB(255,255,255)
+
+    local corner = Instance.new("UICorner", btn)
+    corner.CornerRadius = UDim.new(0, 12)
+
+    local state = default
+
+    -- Hover effect
+    btn.MouseEnter:Connect(function()
+        btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    end)
+    btn.MouseLeave:Connect(function()
+        btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    end)
+
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        btn.Text = state and ("ON " .. name) or ("OFF " .. name)
+        callback(state)
+        
+        -- QUAN TRỌNG: Gọi lại collectChests khi chuyển từ TẮT sang BẬT
+        if state and name == "Auto Collect Chest" then
+            -- Khi bật lại, reset trạng thái hop để đảm bảo
+            getgenv().isServerHopping = false
+            spawn(collectChests)
+        end
+        
+        -- Thông báo
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "🛠️ " .. name,
+            Text = state and (name .. " Bật!") or (name .. " Tắt!"),
+            Duration = 3
+        })
+    end)
+
+    -- Hiệu ứng chữ cầu vồng
+    spawn(function()
+        local hue = 0
+        while true do
+            btn.TextColor3 = Color3.fromHSV(hue, 1, 1)
+            hue = (hue + 0.01) % 1
+            task.wait(0.05)
+        end
+    end)
+end
+
+-- 🔥 Chạy tự động khi script khởi động
+spawn(collectChests)
+
+-- 📌 THÊM NÚT ĐIỀU KHIỂN AUTO CHEST (Vị trí 70 pixels từ trên xuống)
+createToggle("Auto Collect Chest", getgenv().autoCollectChest, function(state)
+    getgenv().autoCollectChest = state
+end, UDim2.new(0.5, -110, 0, 70))
+
+
 -- 🛠 Xác định Executor (Giữ nguyên phần này)
 -- 📌 Lấy thông tin thiết bị
 local UserInputService = game:GetService("UserInputService")
@@ -339,462 +809,3 @@ game.StarterGui:SetCore("SendNotification", {
     Text = serverStatusMessage,
     Duration = 10
 })
-
--- 📢 Thông báo
-local Notification = require(game:GetService("ReplicatedStorage").Notification)
-Notification.new("<Color=Cyan>HenTaiZ Hub <Color=/>"):Display()
-wait(0.5)
-Notification.new("<Color=Yellow>By HenTaiZ Hub On Top👑<Color=/>"):Display()
-wait(1)
--- 📌 HenTaiZ HUB - Nhặt Rương Chính Xác + Đổi Server Đúng Yêu Cầu
-
-repeat wait() until game:IsLoaded() and game.Players.LocalPlayer
-
--- 🖇️ Liên kết Discord
-setclipboard("https://discord.gg/heSHddPs")
-
--- 🏴‍☠️ Tự động chọn team
-local function AutoSelectTeam()
-    if not getgenv().Team then
-        warn("Chưa chọn team!")
-        return
-    end
-
-    local teamName = getgenv().Team
-    local validTeams = {"Marines", "Pirates"}
-
-    if table.find(validTeams, teamName) then
-        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetTeam", teamName)
-        warn("✅ Đã chọn team: " .. teamName)
-    else
-        warn("⚠️ Team không hợp lệ: " .. teamName)
-    end
-end
-
-AutoSelectTeam()
-wait(2)
-
-
--- ================== Aura & Fake V4 + Race Transform ==================
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local player = Players.LocalPlayer
-local char = player.Character or player.CharacterAdded:Wait()
-local humanoid = char:WaitForChild("Humanoid")
-local hrp = char:WaitForChild("HumanoidRootPart")
-
--- ⚡ Tạo vòng sáng giả phía sau (giống awakening circle)
-local function createAura()
-    if hrp:FindFirstChild("FakeV4Aura") then return end
-
-    local aura = Instance.new("ParticleEmitter")
-    aura.Name = "FakeV4Aura"
-    aura.Texture = "rbxassetid://259318296"
-    aura.Rate = 50
-    aura.Lifetime = NumberRange.new(1)
-    aura.Speed = NumberRange.new(0)
-    aura.Rotation = NumberRange.new(0, 360)
-    aura.RotSpeed = NumberRange.new(30)
-    aura.Size = NumberSequence.new({NumberSequenceKeypoint.new(0,3), NumberSequenceKeypoint.new(1,0)})
-    aura.Color = ColorSequence.new(Color3.fromRGB(255,85,0))
-    aura.LightEmission = 1
-    aura.Parent = hrp
-end
-
--- 🔥 Glow toàn thân
-local function createBodyGlow()
-    for _, part in ipairs(char:GetChildren()) do
-        if part:IsA("BasePart") and not part:FindFirstChild("FakeV4Glow") then
-            local glow = Instance.new("PointLight")
-            glow.Name = "FakeV4Glow"
-            glow.Color = Color3.fromRGB(255,85,0)
-            glow.Range = 10
-            glow.Brightness = 2
-            glow.Parent = part
-        end
-    end
-end
-
--- 🎬 Fake Pose Animation
-local function playFakeTransformAnim()
-    local anim = Instance.new("Animation")
-    anim.AnimationId = "rbxassetid://507771019"
-    local track = humanoid:LoadAnimation(anim)
-    track:Play()
-end
-
--- 🌟 Race Transform Animation + Effect
-local function playRaceTransform()
-    local args = {
-        Character = char,
-        CFrame = hrp.CFrame,
-        Color1 = Color3.fromRGB(255,85,0),
-        Color2 = Color3.fromRGB(255,85,0),
-        Color3 = Color3.fromRGB(255,85,0),
-    }
-
-    -- Load animation từ ReplicatedStorage
-    local raceAnim = ReplicatedStorage.Util.Anims.Storage["2"].RaceTransform
-    humanoid:LoadAnimation(raceAnim):Play()
-
-    -- Delay 1 giây rồi gọi effect
-    delay(1, function()
-        pcall(function()
-            require(ReplicatedStorage.Effect.Container.RaceTransformation.Main)(args)
-        end)
-    end)
-end
-
--- ================== Chạy ngay khi load script ==================
-createAura()
-createBodyGlow()
-playFakeTransformAnim()
-playRaceTransform()
-
-
--- ================== KHU VỰC SỬA LỖI QUAN TRỌNG ==================
-
--- ✅ Khởi tạo biến kiểm soát trên môi trường global
-getgenv().autoCollectChest = true -- Mặc định là BẬT
-
-local chestCount, chestsCollected = 0, 0
-local lastChestTime = os.time()
-local teleportDelay = 0.15
-local collectedChestIDs = {}
-local maxChests = math.random(50, 75)
-local startTime = os.time()
-
--- 📢 Thông báo khi script khởi động
-game.StarterGui:SetCore("SendNotification", {
-    Title = "HenTaiZ HUB",
-    Text = "Script đang chạy... Tự động nhặt rương!",
-    Duration = 5
-})
-
--- 🚀 Teleport an toàn
-local function teleportTo(targetPosition)
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local rootPart = character:FindFirstChild("HumanoidRootPart")
-
-    if rootPart then
-        rootPart.CFrame = CFrame.new(targetPosition)
-        wait(teleportDelay)
-    end
-end
-
--- 🔄 Đổi server
-local HttpService = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local PlaceId = game.PlaceId
-
--- 🔄 Đổi server với lý do
-local function serverHop(reason)
-    -- SỬA LỖI: Kiểm tra biến Global
-    if not getgenv().autoCollectChest then return end
-
-    -- Hiển thị notification
-    createAura()
-    createBodyGlow()
-    playFakeTransformAnim()
-    game.StarterGui:SetCore("SendNotification", {
-        Title = "🔄 Server Hop",
-        Text = reason,
-        Duration = 5
-    })
-
-    -- Hàm lấy danh sách server
-    local function ListServers(cursor)
-        local url = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
-        if cursor then
-            url = url .. "&cursor=" .. cursor
-        end
-
-        local success, response = pcall(function()
-            return game:HttpGet(url)
-        end)
-
-        if success then
-            task.wait(1) -- tránh spam API
-            return HttpService:JSONDecode(response)
-        else
-            warn("⚠️ Lỗi lấy server:", response)
-            return {data = {}, nextPageCursor = nil}
-        end
-    end
-
-    -- Tìm server ít người nhất, ưu tiên server 1 người
-    local function FindBestServer()
-        local cursor = nil
-        local best = nil
-
-        repeat
-            local data = ListServers(cursor)
-            for _, server in ipairs(data.data) do
-                if server.playing < server.maxPlayers and server.id ~= game.JobId then
-                    if server.playing == 1 then
-                        return server -- ưu tiên server 1 người
-                    end
-                    if not best or server.playing < best.playing then
-                        best = server
-                    end
-                end
-            end
-            cursor = data.nextPageCursor
-        until not cursor or best
-
-        return best
-    end
-
-    -- Thử teleport với retry
-    task.spawn(function()
-        while true do
-            local target = FindBestServer()
-            if target then
-                print("👉 Teleport tới server:", target.id, "Players:", target.playing)
-                local ok, err = pcall(function()
-                    TeleportService:TeleportToPlaceInstance(PlaceId, target.id, LocalPlayer)
-                end)
-                if ok then
-                    break
-                else
-                    warn("⚠️ Teleport thất bại:", err, "→ thử lại sau 5s")
-                end
-            else
-                warn("❌ Không tìm được server phù hợp → thử lại sau 5s")
-            end
-            task.wait(5)
-        end
-    end)
-end
-
--- Danh sách vật phẩm đặc biệt → dừng nhặt rương
-local stopItems = {
-    "Fist of Darkness",
-    "God's Chalice"
-}
-
--- =================== Hàm kiểm tra vật phẩm ===================
-local function hasStopItem()
-    local player = game.Players.LocalPlayer
-    for _, itemName in ipairs(stopItems) do
-        if player.Backpack:FindFirstChild(itemName) or player.Character:FindFirstChild(itemName) then
-            return true
-        end
-    end
-    return false
-end
-
--- =================== Hàm nhặt rương ===================
-function collectChests()
-    -- SỬA LỖI: Kiểm tra biến Global
-    while getgenv().autoCollectChest do
-        wait(0.1)
-
-        local player = game.Players.LocalPlayer
-        local character = player.Character or player.CharacterAdded:Wait()
-        local rootPart = character:FindFirstChild("HumanoidRootPart")
-        if not rootPart then return end
-
-        -- Lấy danh sách rương
-        -- Giả định CollectionService hoạt động và _ChestTagged là tag hợp lệ
-        local chests = game:GetService("CollectionService"):GetTagged("_ChestTagged")
-
-        -- Tìm rương gần nhất chưa nhặt
-        local closestChest, closestDist = nil, math.huge
-        for _, chest in ipairs(chests) do
-            if not chest:GetAttribute("IsDisabled") and not collectedChestIDs[chest] then
-                local chestPos = chest:GetPivot().Position
-                local dist = (chestPos - rootPart.Position).Magnitude
-                if dist < closestDist then
-                    closestChest, closestDist = chest, dist
-                end
-            end
-        end
-
-        -- Nhặt rương nếu tìm thấy
-        if closestChest then
-            teleportTo(closestChest:GetPivot().Position + Vector3.new(0, 3, 0))
-            lastChestTime = os.time()
-            chestsCollected = chestsCollected + 1
-            collectedChestIDs[closestChest] = true
-
-            -- 📢 Thông báo nhặt rương
-            game.StarterGui:SetCore("SendNotification", {
-                Title = "📦 Nhặt Rương",
-                Text = "Đã nhặt được " .. chestsCollected .. " rương!",
-                Duration = 3
-            })
-        end
-
-        -- 🔒 Dừng nhặt nếu có vật phẩm đặc biệt
-        if hasStopItem() then
-            -- SỬA LỖI: Thay đổi biến Global
-            getgenv().autoCollectChest = false
-            chestsCollected, collectedChestIDs, lastChestTime = 0, {}, os.time()
-            game.StarterGui:SetCore("SendNotification", {
-                Title = "🚨 Auto Nhặt Dừng",
-                Text = "Đã nhặt được vật phẩm đặc biệt!",
-                Duration = 4
-            })
-            break
-        end
-
-        -- 🔄 Server hop khi đạt giới hạn rương
-        if chestsCollected >= maxChests and serverHop then
-            serverHop("Đã đạt giới hạn rương, đổi server!")
-        end
-    end
-end
-
--- =================== Reset nhân vật mỗi 15 giây ===================
-spawn(function()
-    while wait(15) do
-        -- SỬA LỖI: Kiểm tra biến Global
-        if getgenv().autoCollectChest then
-            local player = game.Players.LocalPlayer
-            if player.Character then
-                player.Character:BreakJoints()
-                chestsCollected, collectedChestIDs, lastChestTime = 0, {}, os.time()
-                game.StarterGui:SetCore("SendNotification", {
-                    Title = "🔄 Reset Nhân Vật",
-                    Text = "Để chống văng game!",
-                    Duration = 3
-                })
-            end
-        end
-    end
-end)
-
--- =================== Server hop tự động ===================
--- 90 giây đổi server
-spawn(function()
-    while true do
-        wait(60)
-        -- SỬA LỖI: Kiểm tra biến Global
-        if getgenv().autoCollectChest and serverHop then
-            serverHop("Đủ 60 giây, đổi server!")
-        end
-    end
-end)
-
--- Không nhặt được rương trong 10 giây → đổi server
-spawn(function()
-    while true do
-        wait(5)
-        -- SỬA LỖI: Kiểm tra biến Global
-        if getgenv().autoCollectChest and os.time() - lastChestTime > 5 and serverHop then
-            serverHop("Không nhặt được rương, đổi server!")
-        end
-    end
-end)
-
--- ================== UI QUẢN LÝ GIAO DIỆN MỚI (ĐÃ SỬA LỖI) ==================
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Parent = game.CoreGui
-ScreenGui.ResetOnSpawn = false
-
--- Container chính
-local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 300, 0, 350)
-Frame.Position = UDim2.new(0, 50, 0, 50)
-Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-Frame.BorderSizePixel = 0
-Frame.Active = true -- Cho phép kéo
-Frame.Draggable = true -- Cho phép kéo
-local Corner = Instance.new("UICorner", Frame)
-Corner.CornerRadius = UDim.new(0, 15)
-
--- Tiêu đề
-local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1, 0, 0, 50)
-Title.BackgroundTransparency = 1
-Title.Text = "🎮 HenTaiZ Hub Beta"
-Title.TextScaled = true
-Title.Font = Enum.Font.GothamBold
-Title.TextColor3 = Color3.fromRGB(255,255,255)
-
--- 📌 THÊM NÚT ẨN/HIỆN UI
-local ToggleButton = Instance.new("TextButton", ScreenGui)
-ToggleButton.Size = UDim2.new(0, 100, 0, 30)
-ToggleButton.Position = UDim2.new(0, 50, 0, 10)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-ToggleButton.Text = "Hide Menu"
-ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.Font = Enum.Font.GothamBold
-ToggleButton.TextSize = 18
-ToggleButton.Name = "UI_Toggle_Button"
-
-ToggleButton.MouseButton1Click:Connect(function()
-    Frame.Visible = not Frame.Visible
-    if Frame.Visible then
-        ToggleButton.Text = "Hide Menu"
-    else
-        ToggleButton.Text = "Show Menu"
-    end
-end)
-
-
--- Hàm tạo toggle button đẹp
-local function createToggle(name, default, callback, position)
-    local btn = Instance.new("TextButton", Frame)
-    btn.Size = UDim2.new(0, 220, 0, 50)
-    btn.Position = position
-    btn.Text = default and ("ON " .. name) or ("OFF " .. name)
-    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    btn.TextScaled = true
-    btn.Font = Enum.Font.Gotham
-    btn.TextColor3 = Color3.fromRGB(255,255,255)
-
-    local corner = Instance.new("UICorner", btn)
-    corner.CornerRadius = UDim.new(0, 12)
-
-    local state = default
-
-    -- Hover effect
-    btn.MouseEnter:Connect(function()
-        btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-    end)
-    btn.MouseLeave:Connect(function()
-        btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    end)
-
-    btn.MouseButton1Click:Connect(function()
-        state = not state
-        btn.Text = state and ("ON " .. name) or ("OFF " .. name)
-        callback(state)
-        
-        -- QUAN TRỌNG: Gọi lại collectChests khi chuyển từ TẮT sang BẬT
-        if state and name == "Auto Collect Chest" then
-            spawn(collectChests)
-        end
-        
-        -- Thông báo
-        game.StarterGui:SetCore("SendNotification", {
-            Title = "🛠️ " .. name,
-            Text = state and (name .. " Bật!") or (name .. " Tắt!"),
-            Duration = 3
-        })
-    end)
-
-    -- Hiệu ứng chữ cầu vồng
-    spawn(function()
-        local hue = 0
-        while true do
-            btn.TextColor3 = Color3.fromHSV(hue, 1, 1)
-            hue = (hue + 0.01) % 1
-            task.wait(0.05)
-        end
-    end)
-end
-
--- 🔥 Chạy tự động khi script khởi động
-spawn(collectChests)
-
--- 📌 THÊM NÚT ĐIỀU KHIỂN AUTO CHEST (Vị trí 70 pixels từ trên xuống)
-createToggle("Auto Collect Chest", getgenv().autoCollectChest, function(state)
-    getgenv().autoCollectChest = state
-end, UDim2.new(0.5, -110, 0, 70))
